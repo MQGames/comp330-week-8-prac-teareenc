@@ -22,8 +22,12 @@ uniform vec4 u_colour;
 varying vec3 v_colour;
 
 void main() {
+	float x = sin(gl_FragCoord.x * 0.2);
+	float y = sin(gl_FragCoord.y * 0.2);
 	
-    gl_FragColor = vec4(normalize(u_colour.rgb * v_colour) * sin(gl_FragCoord.x*0.2*gl_FragCoord.y*0.2), u_colour.a); //only normalise rgb, not alpha
+	float factor = x * y;
+	
+    gl_FragColor = vec4(normalize(u_colour.rgb * v_colour) * factor, u_colour.a); //only normalise rgb, not alpha
 }
 `;
 
