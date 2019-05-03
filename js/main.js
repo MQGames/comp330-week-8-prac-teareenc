@@ -4,11 +4,14 @@
 
 const vertexShaderSource = `
 attribute vec4 a_position;
+attribute vec3 a_colour;
 uniform mat4 u_worldMatrix;
 uniform mat4 u_viewMatrix;
 uniform mat4 u_projectionMatrix;
+varying vec3 v_colour;
 
 void main() {
+	v_colour = a_colour;
     gl_Position = u_projectionMatrix * u_viewMatrix * u_worldMatrix * a_position;
 }
 `;
@@ -16,9 +19,11 @@ void main() {
 const fragmentShaderSource = `
 precision mediump float;
 uniform vec4 u_colour;
+varying vec3 v_colour;
 
 void main() {
-    gl_FragColor = u_colour; 
+	
+    gl_FragColor = vec4(normalize(u_colour.rgb * v_colour) * sin(gl_FragCoord.x*0.2*gl_FragCoord.y*0.2), u_colour.a); //only normalise rgb, not alpha
 }
 `;
 
@@ -96,9 +101,8 @@ function main() {
     }
 
     // Initialise the array buffer
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
+    const quadPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionBuffer);
     let quad = [
         -1, -1, 0,
          1, -1, 0,
@@ -109,6 +113,19 @@ function main() {
          1, -1, 0,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quad), gl.STATIC_DRAW);
+	
+	const quadColourBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, quadColourBuffer);
+	let quadColour = [
+        1, 0, 0,
+        0, 1, 0,
+        1, 0, 0,
+
+        0, 1, 0,
+        1, 0, 0,
+        0, 1, 0,
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(quadColour), gl.STATIC_DRAW);
 
     // === Per Frame operations ===
 
@@ -176,13 +193,17 @@ function main() {
             glMatrix.mat4.identity(worldMatrix);
             glMatrix.mat4.translate(worldMatrix, worldMatrix, offset);
             gl.uniformMatrix4fv(shader["u_worldMatrix"], false, worldMatrix);
-
+			
             const colour = new Float32Array([1,1,1,1]);
             gl.uniform4fv(shader["u_colour"], colour);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+			
+            gl.bindBuffer(gl.ARRAY_BUFFER, quadPositionBuffer);
             gl.vertexAttribPointer(shader["a_position"], 3, gl.FLOAT, false, 0, 0);
-            gl.drawArrays(gl.TRIANGLES, 0, quad.length / 3);       
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, quadColourBuffer);
+			gl.vertexAttribPointer(shader["a_colour"], 3, gl.FLOAT, false, 0, 0);
+			
+            gl.drawArrays(gl.TRIANGLES, 0, quad.length / 3); 
         }
     };
 
